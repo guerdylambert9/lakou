@@ -3,12 +3,39 @@ import { useApp } from '../lib/store.jsx'
 import { useRouter } from '../lib/router.jsx'
 import { openStatus, hourLabel, isPast, price, isSellable } from '../lib/logic.js'
 import { dayShort } from '../i18n.js'
-import { fmtRange } from '../lib/format.js'
+import { fmtRange, whoAt, joinDot } from '../lib/format.js'
 import { Badge, Icon, Stars, Button } from './ui.jsx'
 import { ProductArt, ShopBanner, DateStub } from './Art.jsx'
 
+const ARTIFACT = import.meta.env.MODE === 'artifact'
+
+/**
+ * Shares a page through the phone's share sheet (WhatsApp, Messages…), or falls back
+ * to WhatsApp on computers. The link points at this page on the live site.
+ */
+export function ShareButton({ text, path, label }) {
+  const url = ARTIFACT ? '' : window.location.origin + path
+  const message = url ? `${text}\n${url}` : text
+  const wa = `https://wa.me/?text=${encodeURIComponent(message)}`
+  const onClick = (e) => {
+    if (typeof navigator !== 'undefined' && navigator.share) {
+      e.preventDefault()
+      navigator.share({ text, url: url || undefined }).catch((err) => {
+        if (err && err.name !== 'AbortError') window.open(wa, '_blank', 'noopener')
+      })
+    }
+  }
+  return (
+    <a className="btn btn-outline btn-sm" href={wa} target="_blank" rel="noopener noreferrer" onClick={onClick}>
+      <Icon name="send" size={16} />
+      <span>{label}</span>
+    </a>
+  )
+}
+
 export function OpenBadge({ shop }) {
   const { t, lang } = useApp()
+  if (shop.hoursPosted === false) return <Badge>{t('callFirst')}</Badge>
   const st = openStatus(shop.hours)
   if (st.open) return <Badge tone="leaf">{t('closesAt', { t: hourLabel(st.at) })}</Badge>
   if (st.dayOffset == null) return <Badge>{t('closed')}</Badge>
@@ -33,18 +60,16 @@ export function ShopCard({ shop }) {
       <ShopBanner shop={shop} className="shop-card-banner" />
       <span className="shop-card-body">
         <span className="shop-card-title">{shop.name}</span>
-        <span className="muted small">
-          {shop.area} · {shop.practitioner.title} {shop.practitioner.name}
-        </span>
+        <span className="muted small">{joinDot(shop.area, whoAt(shop))}</span>
         <span className="row wrap gap-6">
           <OpenBadge shop={shop} />
-          <Stars value={shop.rating} count={shop.reviewCount} />
+          {shop.rating != null && <Stars value={shop.rating} count={shop.reviewCount} />}
         </span>
         <span className="row wrap gap-6">
           {offers.readings && <Badge tone="indigo">{t('readings')}</Badge>}
           {offers.baths && <Badge tone="indigo">{t('baths')}</Badge>}
           {shop.ships && <Badge tone="indigo">{t('ships')}</Badge>}
-          {shop.languages.includes('Kreyòl') ? <Badge>Kreyòl</Badge> : <Badge>{shop.languages[0]}</Badge>}
+          {shop.languages.includes('Kreyòl') ? <Badge>Kreyòl</Badge> : shop.languages[0] ? <Badge>{shop.languages[0]}</Badge> : null}
         </span>
       </span>
     </button>

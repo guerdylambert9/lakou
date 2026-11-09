@@ -531,7 +531,7 @@ a {
   justify-content: space-between;
   gap: 12px;
 }
-.pagehead-row > div {
+.pagehead-row > div:first-child {
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -1857,4 +1857,105 @@ button.card.event-card {
     animation: none !important;
     transition: none !important;
   }
+}
+
+/* ---------- welcome banner (after Fèt Gede) ---------- */
+.gede.is-welcome {
+  background: var(--sign);
+}
+.gede.is-welcome::after {
+  background: radial-gradient(circle, color-mix(in oklab, var(--gold) 30%, transparent), transparent 70%);
+}
+.gede.is-welcome .gede-title {
+  color: var(--gold);
+  text-shadow: 3px 3px 0 rgba(0, 0, 0, 0.35);
+}
+
+/* ---------- sharing ---------- */
+.shop-hero-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 12px;
+}
+.shop-hero-title h1 {
+  min-width: 0;
+}
+
+/* ---------- owner: join page ---------- */
+.steps {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: step;
+}
+.steps li {
+  position: relative;
+  min-height: 30px;
+  padding-left: 44px;
+  counter-increment: step;
+}
+.steps li::before {
+  content: counter(step);
+  position: absolute;
+  left: 0;
+  top: -2px;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--gold);
+  color: var(--gold-ink);
+  font-family: var(--font-head);
+  font-weight: 700;
+}
+.join-grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
+}
+.offer-big {
+  font-family: var(--font-head);
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--leaf);
+}
+details.faq {
+  border-bottom: 1px solid var(--line);
+}
+details.faq:last-child {
+  border-bottom: 0;
+}
+details.faq summary {
+  padding: 14px 16px;
+  font-weight: 600;
+  cursor: pointer;
+}
+details.faq p {
+  padding: 0 16px 14px;
+  color: var(--muted);
+}
+.join-cta {
+  border-color: color-mix(in oklab, var(--gold) 60%, var(--line));
+}
+
+/* ---------- home: own a botanica? ---------- */
+.own-card {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 20px;
+  padding: 18px;
+}
+.own-card > div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
 }

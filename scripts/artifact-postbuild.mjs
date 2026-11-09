@@ -19,6 +19,9 @@ html = html
   .replace(/<\/body>/i, '')
   .replace(/<meta charset="UTF-8"\s*\/?>/i, '')
   .replace(/<meta name="viewport"[^>]*>/i, '')
+  // The artifact has no files beside the page, so drop the home-screen manifest and icons.
+  .replace(/<!-- "Add to Home Screen"[^>]*-->/i, '')
+  .replace(/<link rel="(manifest|icon|apple-touch-icon)"[^>]*>/gi, '')
   .trim()
 
 // Load the CDN React scripts before the app's own inline script.

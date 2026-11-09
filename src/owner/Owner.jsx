@@ -3,8 +3,9 @@ import { useApp } from '../lib/store.jsx'
 import { useRouter } from '../lib/router.jsx'
 import { OWNER_SHOP_ID } from '../data/seed.js'
 import { CATEGORY_LABELS } from '../i18n.js'
-import { money, price, payout, shopNow, splitLocal, isPast, openDays, slotsFor, hourLabel, newId, isSellable } from '../lib/logic.js'
-import { fmtDay, fmtWhen, fmtRelDay, fmtRange } from '../lib/format.js'
+import { money, price, payout, shopNow, splitLocal, isPast, openDays, slotsFor, hourLabel, newId, isSellable, COMMISSION } from '../lib/logic.js'
+import { CONTACT, FOUNDING } from '../config.js'
+import { fmtDay, fmtWhen, fmtRelDay, fmtRange, whoAt } from '../lib/format.js'
 import { Badge, Button, Empty, Field, Icon, Section, Segmented, Sheet, Stepper, Toggle } from '../components/ui.jsx'
 import { ProductArt } from '../components/Art.jsx'
 import { ProductBadges, eventKindBadge } from '../components/cards.jsx'
@@ -163,18 +164,26 @@ export function OwnerToday() {
   const liveBookings = bookings.filter((b) => b.status === 'confirmed' && b.start && !isPast(b.start))
   const bookedCount = 6 + liveBookings.length
   const bookedValue = 340 + liveBookings.reduce((n, b) => n + (b.price || 0), 0)
-  const gede = events.find((e) => e.id === 'e1')
-  const gedeGoing = gede ? gede.going + s.attendance.filter((a) => a.eventId === 'e1').length : 0
+  // The shop's next ceremony: Fèt Gede until Nov 1, then whatever comes after it.
+  const nextEvent = events.filter((e) => !isPast(e.end || e.start)).sort((a, b) => (a.start < b.start ? -1 : 1))[0]
+  const nextGoing = nextEvent ? nextEvent.going + s.attendance.filter((a) => a.eventId === nextEvent.id).length : 0
+  const firstName = shop.practitioner.name ? shop.practitioner.name.split(' ')[0] : ''
+  const greetName = firstName ? `${shop.practitioner.title} ${firstName}`.trim() : shop.name
 
   return (
     <div className="stack-24">
       <PageHead
-        title={t('hello', { name: `${shop.practitioner.title} ${shop.practitioner.name.split(' ')[0]}` })}
+        title={t('hello', { name: greetName })}
         sub={shop.name}
         action={
-          <Button icon="sparkle" onClick={() => openSheet('recommend', shop.id)}>
-            {t('recommend')}
-          </Button>
+          <div className="row wrap gap-8">
+            <Button icon="sparkle" onClick={() => openSheet('recommend', shop.id)}>
+              {t('recommend')}
+            </Button>
+            <Button variant="outline" icon="store" onClick={() => openSheet('personalize', shop.id)}>
+              {shop.personalized ? t('changeShop') : t('showAsYours')}
+            </Button>
+          </div>
         }
       />
 
@@ -190,9 +199,9 @@ export function OwnerToday() {
           <p className="muted small">{t('youReceive', { p: price(Math.round(payout(bookedValue, 'service'))) })}</p>
         </div>
         <div className="kpi">
-          <p className="kpi-label">{t('rsvpsFor', { e: 'Fèt Gede' })}</p>
-          <p className="kpi-value">{gedeGoing}</p>
-          <p className="muted small">/ {gede?.capacity}</p>
+          <p className="kpi-label">{nextEvent ? t('rsvpsFor', { e: nextEvent.title }) : t('ceremonies')}</p>
+          <p className="kpi-value">{nextEvent ? nextGoing : '—'}</p>
+          <p className="muted small">{nextEvent ? `/ ${nextEvent.capacity}` : t('nothingYet')}</p>
         </div>
         <div className="kpi">
           <p className="kpi-label">{t('nextPayout')}</p>
@@ -336,7 +345,7 @@ export function OwnerEvents() {
         kind: f.kind,
         start: `${f.date}T${f.start}`,
         end: `${f.date}T${f.end || f.start}`,
-        place: f.kind === 'virtual' ? '' : f.kind === 'invite' ? 'Shared with invited guests' : `${shop.name}, ${shop.area}`,
+        place: null,
         price: priced ? Number(f.price) || 0 : 0,
         capacity: Number(f.capacity) || 0,
         going: 0,
@@ -744,5 +753,171 @@ export function QuoteSheet({ id }) {
         </div>
       </div>
     </Sheet>
+  )
+}
+
+// ---------- demo: show the owner's own shop name ----------
+
+const TITLES = ['Manbo', 'Oungan', 'Doktè fèy', 'Madanm', 'Msye']
+
+export function PersonalizeSheet() {
+  const { t, s, dispatch, closeSheet, toast } = useApp()
+  const d = s.demoShop || {}
+  const [f, setF] = useState({ name: d.name || '', title: d.title || TITLES[0], person: d.person || '', area: d.area || '' })
+  const set = (k) => (e) => setF((x) => ({ ...x, [k]: e.target.value }))
+  const valid = f.name.trim().length > 1
+  const apply = (e) => {
+    e.preventDefault()
+    if (!valid) return
+    dispatch({ type: 'set', patch: { demoShop: { name: f.name.trim(), title: f.title, person: f.person.trim(), area: f.area.trim() } } })
+    closeSheet()
+    toast(t('nowShowing', { name: f.name.trim() }))
+  }
+  const useSample = () => {
+    dispatch({ type: 'set', patch: { demoShop: null } })
+    closeSheet()
+    toast(t('backToSample'))
+  }
+  return (
+    <Sheet
+      open
+      onClose={closeSheet}
+      title={t('showAsYours')}
+      eyebrow={t('ownerView')}
+      labelClose={t('close')}
+      footer={
+        <div className="row wrap gap-8">
+          {s.demoShop && (
+            <Button variant="ghost" onClick={useSample}>
+              {t('useSample')}
+            </Button>
+          )}
+          <Button type="submit" form="personalize-form" size="lg" className="grow" disabled={!valid}>
+            {t('apply')}
+          </Button>
+        </div>
+      }
+    >
+      <form id="personalize-form" className="stack-16" onSubmit={apply}>
+        <p className="muted">{t('personalizeHint')}</p>
+        <Field label={t('shopName')} htmlFor="ps-name">
+          <input id="ps-name" value={f.name} onChange={set('name')} placeholder={t('shopNamePh')} autoComplete="off" required />
+        </Field>
+        <div className="grid-2">
+          <Field label={t('title')} htmlFor="ps-title">
+            <select id="ps-title" value={f.title} onChange={set('title')}>
+              {TITLES.map((x) => (
+                <option key={x} value={x}>
+                  {x}
+                </option>
+              ))}
+            </select>
+          </Field>
+          <Field label={t('name')} htmlFor="ps-person">
+            <input id="ps-person" value={f.person} onChange={set('person')} placeholder={t('optional')} autoComplete="off" />
+          </Field>
+        </div>
+        <Field label={t('cityArea')} htmlFor="ps-area">
+          <input id="ps-area" value={f.area} onChange={set('area')} placeholder={t('cityPh')} autoComplete="off" />
+        </Field>
+      </form>
+    </Sheet>
+  )
+}
+
+// ---------- the founding-shop offer ----------
+
+const pct = (n) => `${Math.round(n * 100)}%`
+const digitsOnly = (s) => (s || '').replace(/\D/g, '')
+
+export function OwnerJoin() {
+  const { t, shop } = useOwnerData()
+  const wa = digitsOnly(CONTACT.whatsapp)
+  const phone = CONTACT.phone.trim()
+  const email = CONTACT.email.trim()
+  const waText = `${t('waJoinText')}${shop.personalized ? ` (${shop.name})` : ''}`
+  return (
+    <div className="stack-24">
+      <PageHead title={t('joinTitle')} sub={t('joinSub')} />
+
+      <section className="card pad stack-12" aria-labelledby="how-title">
+        <h2 id="how-title" className="h3">
+          {t('howItWorks')}
+        </h2>
+        <ol className="steps">
+          <li>{t('step1')}</li>
+          <li>{t('step2')}</li>
+          <li>{t('step3')}</li>
+        </ol>
+      </section>
+
+      <div className="join-grid">
+        <section className="card pad stack-12" aria-labelledby="decide-title">
+          <h2 id="decide-title" className="h3">
+            {t('youDecide')}
+          </h2>
+          <ul className="bullets">
+            <li>{t('decide1')}</li>
+            <li>{t('decide2')}</li>
+            <li>{t('decide3')}</li>
+            <li>{t('decide4')}</li>
+          </ul>
+        </section>
+        <section className="card pad stack-12 offer" aria-labelledby="cost-title">
+          <h2 id="cost-title" className="h3">
+            {t('whatItCosts')}
+          </h2>
+          <p className="offer-big">{t('freeToJoin')}</p>
+          <p>{t('foundingOffer', { n: FOUNDING.months })}</p>
+          <p className="muted">{t('afterThat', { p: pct(COMMISSION.product), b: pct(COMMISSION.service) })}</p>
+        </section>
+      </div>
+
+      <Section title={t('ownersAsk')} id="faq">
+        <div className="card list-card">
+          {[1, 2, 3, 4].map((i) => (
+            <details key={i} className="faq">
+              <summary>{t(`faqQ${i}`)}</summary>
+              <p>{t(`faqA${i}`)}</p>
+            </details>
+          ))}
+        </div>
+      </Section>
+
+      <section className="card pad stack-12 join-cta" aria-labelledby="cta-title">
+        <h2 id="cta-title" className="h3">
+          {t('becomeFounding')}
+        </h2>
+        <p>{t('firstShops', { n: FOUNDING.shops, m: FOUNDING.months })}</p>
+        {wa || phone || email ? (
+          <div className="stack-12">
+            {CONTACT.name && <p className="strong">{t('talkTo', { name: CONTACT.name })}</p>}
+            {wa && (
+              <div>
+                <a className="btn btn-gold btn-lg" href={`https://wa.me/${wa}?text=${encodeURIComponent(waText)}`} target="_blank" rel="noopener noreferrer">
+                  <Icon name="send" size={18} />
+                  <span>{t('messageWhatsApp')}</span>
+                </a>
+              </div>
+            )}
+            {phone && (
+              <p>
+                {t('callOrText')}:{' '}
+                <a className="strong num" href={`tel:${digitsOnly(phone)}`}>
+                  {phone}
+                </a>
+              </p>
+            )}
+            {email && (
+              <p>
+                {t('emailUs')}: <span className="strong">{email}</span>
+              </p>
+            )}
+          </div>
+        ) : (
+          <p className="muted">{t('askPresenter')}</p>
+        )}
+      </section>
+    </div>
   )
 }

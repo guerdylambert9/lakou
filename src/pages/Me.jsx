@@ -2,7 +2,7 @@ import React from 'react'
 import { useApp, CUSTOMER } from '../lib/store.jsx'
 import { useRouter } from '../lib/router.jsx'
 import { money, price, splitLocal, joinLocal, googleCalendarUrl, isPast } from '../lib/logic.js'
-import { fmtDay, fmtWhen } from '../lib/format.js'
+import { fmtDay, fmtWhen, whoAt, joinDot } from '../lib/format.js'
 import { Badge, Button, Empty, Icon, Section, Toggle } from '../components/ui.jsx'
 import { PageHead } from '../components/Layout.jsx'
 
@@ -37,7 +37,7 @@ export default function Me() {
             {recs.map((r) => (
               <div key={r.id} className="card pad stack-8">
                 <div className="row between wrap gap-8">
-                  <p className="strong">{t('fromReadingBy', { who: r.from, d: fmtDay(lang, r.date) })}</p>
+                  <p className="strong">{t('fromReadingBy', { who: whoAt(shop(r.shopId)) || shop(r.shopId).name, d: fmtDay(lang, r.date) })}</p>
                   {r.status === 'new' ? <Badge tone="gold">{t('new')}</Badge> : <Badge tone="leaf">{t('added')}</Badge>}
                 </div>
                 <p className="muted">“{r.note}”</p>
@@ -208,7 +208,7 @@ export function BookingDone({ id }) {
         <p className="strong">
           {sv.name} · {sv.kr}
         </p>
-        <p>{sh.practitioner.title} {sh.practitioner.name} · {sh.name}</p>
+        <p>{joinDot(whoAt(sh), sh.name)}</p>
         <p>
           <Icon name="clock" size={16} /> {fmtWhen(lang, b.start)} · {t('minutes', { n: sv.duration })}
         </p>

@@ -18,6 +18,38 @@ npm run build:artifact   # one self-contained HTML file in dist-artifact/lakou.h
 
 Requires Node 18 or newer. Stack: React 18 + Vite, no other runtime dependencies.
 
+## Deploy to Vercel
+
+`vercel.json` already tells Vercel how to build the app (`npm run build` into `dist/`) and sends every
+path to `index.html`, so links like `/shop/ginen` work when opened or refreshed.
+
+```bash
+npm run deploy           # production: the URL you share
+npm run deploy:preview   # a test URL that doesn't touch production
+```
+
+The first run asks you to log in to Vercel and to set up the project; the defaults are fine. It then
+prints the production URL. To deploy on every `git push` instead, run `npx vercel git connect` once.
+
+Share the short production domain (shown under Domains in the Vercel project). Deployment-specific
+URLs are protected by default and ask visitors to log in to Vercel.
+
+The page tells search engines not to index it, because its shops and addresses are invented.
+
+## Before you demo it to shop owners
+
+1. **Add your contact details** in `src/config.js` (WhatsApp, phone, email), then `npm run deploy`.
+   The owner "Join" page shows them; with none set, it tells owners to ask the person showing the app.
+2. **Add it to your phone's home screen** (Safari: Share → Add to Home Screen; Chrome: ⋮ → Add to
+   Home screen). It then opens full-screen with the Lakou icon.
+3. **At each shop**, switch to Shop owner view and tap **Show as your shop**: type the shop's name and
+   the app shows it everywhere, on the owner side and the customer side. It stays on your phone only.
+4. **Between shops**, tap **Reset demo** at the bottom of any page. It clears orders, bookings and the
+   shop name from the last visit.
+
+Sample ceremonies date themselves from the day you open the app, so there are always some coming up.
+The Fèt Gede banner shows until Nov 2, then a year-round welcome banner takes its place.
+
 ## What you can click through
 
 **Customer view**

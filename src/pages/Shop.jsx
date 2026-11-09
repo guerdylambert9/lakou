@@ -2,10 +2,10 @@ import React, { useState } from 'react'
 import { useApp } from '../lib/store.jsx'
 import { hourLabel, isPast } from '../lib/logic.js'
 import { dayLong } from '../i18n.js'
-import { fmtDay } from '../lib/format.js'
+import { fmtDay, whoAt, joinDot } from '../lib/format.js'
 import { Badge, Empty, Icon, Segmented, Stars } from '../components/ui.jsx'
 import { ShopBanner } from '../components/Art.jsx'
-import { EventCard, OpenBadge, ProductCard, ServiceRow } from '../components/cards.jsx'
+import { EventCard, OpenBadge, ProductCard, ServiceRow, ShareButton } from '../components/cards.jsx'
 import { useRouter } from '../lib/router.jsx'
 
 export default function Shop({ id }) {
@@ -30,13 +30,37 @@ export default function Shop({ id }) {
       <div className="shop-hero card">
         <ShopBanner shop={sh} className="shop-hero-banner" />
         <div className="shop-hero-body">
-          <h1>{sh.name}</h1>
-          <p className="muted">
-            {sh.practitioner.title} {sh.practitioner.name} · {sh.area}
-          </p>
+          <div className="shop-hero-title">
+            <h1>{sh.name}</h1>
+            <ShareButton label={t('share')} text={t('shareShop', { name: sh.name })} path={`/shop/${sh.id}`} />
+          </div>
+          <p className="muted">{joinDot(whoAt(sh), sh.area)}</p>
+          {sh.address && <p>{sh.address}</p>}
+          {sh.note && <p className="muted small">{t(sh.note)}</p>}
+          {(sh.phone || sh.mapsUrl || sh.website || sh.address) && (
+            <p className="row wrap gap-6">
+              {sh.phone ? (
+                <a className="link-btn" href={`tel:+1${sh.phone.replace(/\D/g, '')}`}>
+                  {sh.phone}
+                </a>
+              ) : (
+                sh.address && <span className="muted small">{t('noPhone')}</span>
+              )}
+              {sh.mapsUrl && (
+                <a className="link-btn" href={sh.mapsUrl} target="_blank" rel="noopener noreferrer">
+                  {t('directions')}
+                </a>
+              )}
+              {sh.website && (
+                <a className="link-btn" href={sh.website} target="_blank" rel="noopener noreferrer">
+                  {t('website')}
+                </a>
+              )}
+            </p>
+          )}
           <div className="row wrap gap-6">
             <OpenBadge shop={sh} />
-            <Stars value={sh.rating} count={sh.reviewCount} />
+            {sh.rating != null && <Stars value={sh.rating} count={sh.reviewCount} />}
             {sh.traditions.map((tr) => (
               <Badge key={tr} tone="indigo">
                 {tr}
@@ -59,13 +83,16 @@ export default function Shop({ id }) {
         ]}
       />
 
-      {tab === 'services' && (
-        <div className="card list-card">
-          {services.map((sv) => (
-            <ServiceRow key={sv.id} service={sv} />
-          ))}
-        </div>
-      )}
+      {tab === 'services' &&
+        (services.length ? (
+          <div className="card list-card">
+            {services.map((sv) => (
+              <ServiceRow key={sv.id} service={sv} />
+            ))}
+          </div>
+        ) : (
+          <Empty icon="sparkle" title={t('nothingYet')} />
+        ))}
 
       {tab === 'supplies' &&
         (products.length ? (
@@ -92,37 +119,59 @@ export default function Shop({ id }) {
       {tab === 'about' && (
         <div className="about-grid">
           <div className="card pad stack-12">
-            <p className="eyebrow">{t('practitioner')}</p>
-            <p className="strong">
-              {sh.practitioner.title} {sh.practitioner.name}
-            </p>
-            <p>{sh.practitioner.bio}</p>
-            <dl className="facts">
-              <dt>{t('traditions')}</dt>
-              <dd>{sh.traditions.join(', ')}</dd>
-              <dt>{t('languages')}</dt>
-              <dd>{sh.languages.join(', ')}</dd>
-            </dl>
-            <p className="eyebrow">{t('houseRules')}</p>
-            <ul className="bullets">
-              {sh.rules.map((r) => (
-                <li key={r}>{r}</li>
-              ))}
-            </ul>
+            {(sh.practitioner.title || sh.practitioner.name) && (
+              <>
+                <p className="eyebrow">{t('practitioner')}</p>
+                <p className="strong">{whoAt(sh)}</p>
+              </>
+            )}
+            {sh.practitioner.bio ? <p>{sh.practitioner.bio}</p> : sh.practitioner.title || sh.practitioner.name ? <p className="muted">{t('bioPlaceholder')}</p> : null}
+            {(sh.traditions.length > 0 || sh.languages.length > 0) && (
+              <dl className="facts">
+                {sh.traditions.length > 0 && (
+                  <>
+                    <dt>{t('traditions')}</dt>
+                    <dd>{sh.traditions.join(', ')}</dd>
+                  </>
+                )}
+                {sh.languages.length > 0 && (
+                  <>
+                    <dt>{t('languages')}</dt>
+                    <dd>{sh.languages.join(', ')}</dd>
+                  </>
+                )}
+              </dl>
+            )}
+            {sh.rules.length > 0 && (
+              <>
+                <p className="eyebrow">{t('houseRules')}</p>
+                <ul className="bullets">
+                  {sh.rules.map((r) => (
+                    <li key={r}>{r}</li>
+                  ))}
+                </ul>
+              </>
+            )}
           </div>
           <div className="card pad stack-12">
             <p className="eyebrow">{t('hours')}</p>
-            <table className="hours">
-              <tbody>
-                {[1, 2, 3, 4, 5, 6, 0].map((d) => (
-                  <tr key={d}>
-                    <th scope="row">{dayLong(lang, d)}</th>
-                    <td>{sh.hours[d] ? `${hourLabel(sh.hours[d][0])} – ${hourLabel(sh.hours[d][1])}` : t('closed')}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            {sh.hoursPosted === false ? (
+              <p>{t('hoursNotPosted')}</p>
+            ) : (
+              <table className="hours">
+                <tbody>
+                  {[1, 2, 3, 4, 5, 6, 0].map((d) => (
+                    <tr key={d}>
+                      <th scope="row">{dayLong(lang, d)}</th>
+                      <td>{sh.hours[d] ? `${hourLabel(sh.hours[d][0])} – ${hourLabel(sh.hours[d][1])}` : t('closed')}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+            {sh.hoursNote && <p className="muted small">{t(sh.hoursNote)}</p>}
           </div>
+          {shopReviews.length > 0 && (
           <div className="card pad stack-12 about-reviews">
             <p className="eyebrow">
               {t('reviews')} · <Stars value={sh.rating} count={sh.reviewCount} />
@@ -136,6 +185,7 @@ export default function Shop({ id }) {
               </div>
             ))}
           </div>
+          )}
         </div>
       )}
     </div>

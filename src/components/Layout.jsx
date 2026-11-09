@@ -17,6 +17,7 @@ function useNavItems() {
       { to: '/owner/inbox', icon: 'inbox', label: t('ownerInbox'), short: t('ownerInboxShort'), count: pending },
       { to: '/owner/ceremonies', icon: 'calendar', label: t('ownerEvents') },
       { to: '/owner/catalog', icon: 'list', label: t('ownerCatalog') },
+      { to: '/owner/join', icon: 'sparkle', label: t('join') },
     ]
   }
   return [

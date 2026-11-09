@@ -30,3 +30,16 @@ export function fmtRelDay(lang, ymd, todayYmd, t) {
 }
 
 export const capital = (s) => s.charAt(0).toUpperCase() + s.slice(1)
+
+/** "Manbo Evelyne D." — empty when the shop hasn't named its practitioner. */
+export const whoAt = (sh) => `${sh.practitioner.title || ''} ${sh.practitioner.name || ''}`.trim()
+
+/** Joins the parts that exist: "Little Haiti · Manbo Evelyne D." */
+export const joinDot = (...parts) => parts.filter(Boolean).join(' · ')
+
+/** Where an event happens, worded for the viewer. */
+export function placeOf(e, sh, t) {
+  if (e.kind === 'virtual') return t('onlineLink')
+  if (e.kind === 'invite') return t('sharedWithGuests')
+  return e.place || `${sh.name}, ${sh.area}`
+}

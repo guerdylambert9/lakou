@@ -126,3 +126,12 @@ describe('calendar', () => {
 function round(n) {
   return Math.round(n * 100) / 100
 }
+
+describe('relative sample dates', () => {
+  it('finds the next weekday after today', async () => {
+    const { nextWeekday } = await import('./logic.js')
+    expect(nextWeekday('2026-10-26', 5)).toBe('2026-10-30') // Monday -> Friday
+    expect(nextWeekday('2026-10-30', 5)).toBe('2026-11-06') // Friday -> next Friday
+    expect(nextWeekday('2026-10-31', 0)).toBe('2026-11-01') // Saturday -> Sunday
+  })
+})

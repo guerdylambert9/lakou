@@ -10,7 +10,7 @@ import Events from './pages/Events.jsx'
 import Cart, { OrderDone } from './pages/Cart.jsx'
 import Me, { BookingDone } from './pages/Me.jsx'
 import { ProductSheet, ServiceSheet, EventSheet } from './pages/sheets.jsx'
-import { OwnerToday, OwnerInbox, OwnerEvents, OwnerCatalog, RecommendSheet, QuoteSheet } from './owner/Owner.jsx'
+import { OwnerToday, OwnerInbox, OwnerEvents, OwnerCatalog, OwnerJoin, RecommendSheet, QuoteSheet, PersonalizeSheet } from './owner/Owner.jsx'
 
 const ROUTES = [
   ['/', () => <Home />],
@@ -25,6 +25,7 @@ const ROUTES = [
   ['/owner/inbox', () => <OwnerInbox />],
   ['/owner/ceremonies', () => <OwnerEvents />],
   ['/owner/catalog', () => <OwnerCatalog />],
+  ['/owner/join', () => <OwnerJoin />],
 ]
 
 function Page() {
@@ -52,6 +53,8 @@ function Sheets() {
       return <RecommendSheet key="rec" />
     case 'quote':
       return <QuoteSheet key={sh.id} id={sh.id} />
+    case 'personalize':
+      return <PersonalizeSheet key="personalize" />
     default:
       return null
   }

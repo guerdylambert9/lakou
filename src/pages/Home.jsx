@@ -3,7 +3,7 @@ import { useApp } from '../lib/store.jsx'
 import { useRouter } from '../lib/router.jsx'
 import { isPast, shopNow, price } from '../lib/logic.js'
 import { CATEGORY_LABELS } from '../i18n.js'
-import { fmtDay } from '../lib/format.js'
+import { fmtDay, whoAt } from '../lib/format.js'
 import { Button, Chip, Empty, Icon, Section } from '../components/ui.jsx'
 import { EventCard, ProductCard, ShopCard } from '../components/cards.jsx'
 
@@ -34,9 +34,35 @@ function GedeHero() {
   )
 }
 
-function RecommendationCard({ rec }) {
-  const { t, lang, product, service, dispatch, toast, openSheet } = useApp()
+/** Shown once Fèt Gede has passed, so the home page always opens on a banner. */
+function WelcomeHero() {
+  const { t } = useApp()
   const { navigate } = useRouter()
+  return (
+    <section className="gede is-welcome" aria-labelledby="welcome-title">
+      <div className="gede-in">
+        <p className="gede-eyebrow">{t('welcomeEyebrow')}</p>
+        <h1 id="welcome-title" className="gede-title">
+          Lakou a toujou louvri
+        </h1>
+        <p className="gede-text">{t('welcomeText')}</p>
+        <div className="row wrap gap-8">
+          <Button variant="gold" onClick={() => navigate('/shops')}>
+            {t('findShop')}
+          </Button>
+          <Button variant="on-dark" onClick={() => navigate('/ceremonies')}>
+            {t('gedeEvents')}
+          </Button>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+function RecommendationCard({ rec }) {
+  const { t, lang, product, service, shop, dispatch, toast, openSheet } = useApp()
+  const { navigate } = useRouter()
+  const from = whoAt(shop(rec.shopId)) || shop(rec.shopId).name
   const items = rec.items.map((i) => ({ ...i, p: product(i.productId) })).filter((i) => i.p)
   const svcs = rec.services.map(service).filter(Boolean)
   const addAll = () => {
@@ -53,7 +79,7 @@ function RecommendationCard({ rec }) {
         </span>
         <div>
           <p className="rec-title">{t('fromReading')}</p>
-          <p className="muted small">{t('fromReadingBy', { who: rec.from, d: fmtDay(lang, rec.date) })}</p>
+          <p className="muted small">{t('fromReadingBy', { who: from, d: fmtDay(lang, rec.date) })}</p>
         </div>
       </div>
       <p className="rec-note">“{rec.note}”</p>
@@ -90,7 +116,7 @@ function RecommendationCard({ rec }) {
 }
 
 export default function Home() {
-  const { t, lang, s, shops, openSheet } = useApp()
+  const { t, lang, s, shops, openSheet, dispatch } = useApp()
   const { navigate } = useRouter()
   const [q, setQ] = useState('')
   const [cat, setCat] = useState('all')
@@ -105,7 +131,7 @@ export default function Home() {
     if (!term) return null
     const has = (str) => (str || '').toLowerCase().includes(term)
     return {
-      shops: shops.filter((sh) => has(sh.name) || has(sh.area) || sh.traditions.some(has) || has(sh.practitioner.name)),
+      shops: shops.filter((sh) => has(sh.name) || has(sh.area) || has(sh.address) || sh.traditions.some(has) || has(sh.practitioner.name)),
       products: s.products.filter((p) => has(p.name) || has(p.kr) || has(CATEGORY_LABELS.en[p.category]) || has(CATEGORY_LABELS.kr[p.category])),
       services: s.services.filter((sv) => has(sv.name) || has(sv.kr)),
     }
@@ -113,7 +139,7 @@ export default function Home() {
 
   return (
     <div className="stack-24">
-      {showGede && <GedeHero />}
+      {showGede ? <GedeHero /> : <WelcomeHero />}
 
       <div className="search">
         <Icon name="search" />
@@ -214,6 +240,25 @@ export default function Home() {
               ))}
             </div>
           </Section>
+
+          <section className="card own-card" aria-labelledby="own-title">
+            <div>
+              <h2 id="own-title" className="h3">
+                {t('ownBotanica')}
+              </h2>
+              <p className="muted">{t('ownBotanicaText')}</p>
+            </div>
+            <Button
+              variant="outline"
+              iconRight="chevron"
+              onClick={() => {
+                dispatch({ type: 'set', patch: { mode: 'owner' } })
+                navigate('/owner/join')
+              }}
+            >
+              {t('seeHow')}
+            </Button>
+          </section>
         </>
       )}
     </div>

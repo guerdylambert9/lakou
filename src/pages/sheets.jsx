@@ -3,10 +3,10 @@ import { useApp } from '../lib/store.jsx'
 import { useRouter } from '../lib/router.jsx'
 import { isSellable, price, openDays, slotsFor, hourLabel, newId, googleCalendarUrl, isPast } from '../lib/logic.js'
 import { CATEGORY_LABELS } from '../i18n.js'
-import { fmtDay, fmtRange } from '../lib/format.js'
+import { fmtDay, fmtRange, whoAt, joinDot, placeOf } from '../lib/format.js'
 import { Badge, Button, Field, Icon, Segmented, Sheet, Stepper } from '../components/ui.jsx'
 import { ProductArt } from '../components/Art.jsx'
-import { ProductBadges, eventKindBadge } from '../components/cards.jsx'
+import { ProductBadges, eventKindBadge, ShareButton } from '../components/cards.jsx'
 
 export function ProductSheet({ id }) {
   const { t, lang, product, shop, dispatch, closeSheet, toast } = useApp()
@@ -72,9 +72,7 @@ export function ProductSheet({ id }) {
           >
             <span>
               <strong>{sh.name}</strong>
-              <span className="muted small block">
-                {sh.practitioner.title} {sh.practitioner.name} · {sh.area}
-              </span>
+              <span className="muted small block">{joinDot(whoAt(sh), sh.area)}</span>
             </span>
             <Icon name="chevron" />
           </button>
@@ -157,11 +155,7 @@ export function ServiceSheet({ id }) {
     <Sheet open onClose={closeSheet} title={`${sv.name} · ${sv.kr}`} eyebrow={`${sh.name} · ${modeLabel}`} labelClose={t('close')} footer={footer}>
       <div className="stack-16">
         <p>{sv.desc}</p>
-        <p className="muted small">
-          {sh.practitioner.title} {sh.practitioner.name}
-          {sv.duration ? ` · ${t('minutes', { n: sv.duration })}` : ''}
-          {sv.price ? ` · ${price(sv.price)}` : ''}
-        </p>
+        <p className="muted small">{joinDot(whoAt(sh) || sh.name, sv.duration ? t('minutes', { n: sv.duration }) : '', sv.price ? price(sv.price) : '')}</p>
 
         {sv.mode === 'instant' && sv.formats.length > 1 && (
           <Segmented id="format" label="Format" value={format} onChange={setFormat} options={sv.formats.map((f) => ({ value: f, label: fmtLabel(f), icon: f === 'video' ? 'video' : 'pin' }))} />
@@ -240,7 +234,7 @@ export function EventSheet({ id }) {
   const invite = s.invites.find((i) => i.eventId === e.id && i.customerId === 'you')
   const going = e.going + s.attendance.filter((a) => a.eventId === e.id).length
   const left = Math.max(0, e.capacity - going)
-  const where = e.kind === 'virtual' ? t('onlineLink') : e.kind === 'invite' && !(invite && invite.status === 'approved') ? e.place : e.place
+  const where = placeOf(e, sh, t)
   const details = [e.title, fmtRange(lang, e.start, e.end), sh.name, where].filter(Boolean).join('\n')
 
   const attend = (kind) => {
@@ -338,6 +332,11 @@ export function EventSheet({ id }) {
           </p>
         )}
         {showText && <textarea className="copy-box" readOnly rows={4} value={details} onFocus={(ev) => ev.target.select()} autoFocus />}
+        {!past && (
+          <div>
+            <ShareButton label={t('share')} text={`${e.title} · ${fmtRange(lang, e.start, e.end)} · ${sh.name}`} path={`/shop/${sh.id}`} />
+          </div>
+        )}
         <button
           type="button"
           className="shop-link"
@@ -348,9 +347,7 @@ export function EventSheet({ id }) {
         >
           <span>
             <strong>{sh.name}</strong>
-            <span className="muted small block">
-              {sh.practitioner.title} {sh.practitioner.name} · {sh.area}
-            </span>
+            <span className="muted small block">{joinDot(whoAt(sh), sh.area)}</span>
           </span>
           <Icon name="chevron" />
         </button>

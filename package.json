@@ -6,9 +6,11 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "build:artifact": "vite build --mode artifact && node scripts/artifact-postbuild.mjs",
     "preview": "vite preview",
-    "test": "vitest run"
+    "test": "vitest run",
+    "deploy": "npx vercel --prod",
+    "deploy:preview": "npx vercel",
+    "build:artifact": "vite build --mode artifact && node scripts/artifact-postbuild.mjs"
   },
   "dependencies": {
     "react": "18.3.1",

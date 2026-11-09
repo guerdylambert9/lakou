@@ -208,3 +208,13 @@ export const isPast = (endOrStart, now = shopNow()) => {
   const { ymd, hour } = splitLocal(endOrStart)
   return ymd < now.ymd || (ymd === now.ymd && hour < now.hour)
 }
+
+/**
+ * The next date that falls on weekday `dow` (0 = Sunday), at least `minAhead` days after `ymd`.
+ * Keeps sample ceremonies in the future whenever the demo is opened.
+ */
+export function nextWeekday(ymd, dow, minAhead = 1) {
+  let d = addDays(ymd, minAhead)
+  while (dowOf(d) !== dow) d = addDays(d, 1)
+  return d
+}
